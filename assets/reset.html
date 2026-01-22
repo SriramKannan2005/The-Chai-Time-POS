@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chai Time POS - Reset Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #8B4513 0%, #D2691E 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #8B4513;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .warning {
+            background: #FFF3CD;
+            border-left: 4px solid #FF9800;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .warning strong {
+            color: #FF9800;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .status {
+            background: #F5F5F5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #DDD;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .status-value {
+            font-family: monospace;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-value.cleared {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .status-value.has-data {
+            color: #F44336;
+            font-weight: bold;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-reset {
+            background: #F44336;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #D32F2F;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+        }
+
+        .btn-check {
+            background: #2196F3;
+            color: white;
+        }
+
+        .btn-check:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+
+        .btn-back {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-back:hover {
+            background: #388E3C;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .success-message {
+            background: #D4EDDA;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .firebase-note {
+            background: #E3F2FD;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        .firebase-note strong {
+            color: #2196F3;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .firebase-note a {
+            color: #1976D2;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .firebase-note a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔄 Chai Time POS Reset Tool</h1>
+        <p class="subtitle">Clear all local data and start fresh</p>
+
+        <div class="warning">
+            <strong>⚠️ Warning</strong>
+            This will permanently delete all bills, audit logs, and reset the bill counter from your browser's local
+            storage. This action cannot be undone!
+        </div>
+
+        <div class="status" id="status">
+            <div class="status-item">
+                <span class="status-label">Bills:</span>
+                <span class="status-value" id="bills-status">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Last Bill Number:</span>
+                <span class="status-value" id="bill-number-status">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Audit Logs:</span>
+                <span class="status-value" id="audit-status">Checking...</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Pending Bills:</span>
+                <span class="status-value" id="pending-status">Checking...</span>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn-check" onclick="checkStatus()">🔍 Check Status</button>
+            <button class="btn-reset" onclick="resetData()">🗑️ Reset All Data</button>
+        </div>
+
+        <button class="btn-back" onclick="goBack()" style="width: 100%; margin-top: 15px;">
+            ← Back to POS
+        </button>
+
+        <div class="success-message" id="success-message">
+            <strong>✅ Success!</strong>
+            All local data has been cleared. Bill numbers will start from #1 on the next transaction.
+        </div>
+
+        <div class="firebase-note">
+            <strong>📝 Don't Forget Firebase!</strong>
+            This tool only clears local browser data. To completely reset, you also need to clear Firebase data:
+            <br><br>
+            <a href="https://console.firebase.google.com/project/chaitime-fa063/database" target="_blank">
+                → Open Firebase Console
+            </a>
+            <br>
+            Delete the following nodes: bills, rawMaterials, shifts, audit
+        </div>
+    </div>
+
+    <script>
+        function checkStatus() {
+            // Check bills
+            const bills = localStorage.getItem('bills');
+            const billsEl = document.getElementById('bills-status');
+            if (bills) {
+                const billsArray = JSON.parse(bills);
+                billsEl.textContent = `${billsArray.length} bills stored`;
+                billsEl.className = 'status-value has-data';
+            } else {
+                billsEl.textContent = 'No data';
+                billsEl.className = 'status-value cleared';
+            }
+
+            // Check last bill number
+            const lastBillNumber = localStorage.getItem('lastBillNumber');
+            const billNumberEl = document.getElementById('bill-number-status');
+            if (lastBillNumber) {
+                billNumberEl.textContent = `#${lastBillNumber}`;
+                billNumberEl.className = 'status-value has-data';
+            } else {
+                billNumberEl.textContent = 'Not set (will start from #1)';
+                billNumberEl.className = 'status-value cleared';
+            }
+
+            // Check audit logs
+            const auditLogs = localStorage.getItem('auditLogs');
+            const auditEl = document.getElementById('audit-status');
+            if (auditLogs) {
+                const logsArray = JSON.parse(auditLogs);
+                auditEl.textContent = `${logsArray.length} logs`;
+                auditEl.className = 'status-value has-data';
+            } else {
+                auditEl.textContent = 'No data';
+                auditEl.className = 'status-value cleared';
+            }
+
+            // Check pending bills
+            const pendingBills = localStorage.getItem('pendingBills');
+            const pendingEl = document.getElementById('pending-status');
+            if (pendingBills) {
+                const pendingArray = JSON.parse(pendingBills);
+                pendingEl.textContent = `${pendingArray.length} pending`;
+                pendingEl.className = 'status-value has-data';
+            } else {
+                pendingEl.textContent = 'No data';
+                pendingEl.className = 'status-value cleared';
+            }
+        }
+
+        function resetData() {
+            if (!confirm('Are you sure you want to delete all local data? This cannot be undone!')) {
+                return;
+            }
+
+            // Clear all localStorage keys
+            localStorage.removeItem('bills');
+            localStorage.removeItem('lastBillNumber');
+            localStorage.removeItem('auditLogs');
+            localStorage.removeItem('pendingBills');
+
+            // Show success message
+            const successMsg = document.getElementById('success-message');
+            successMsg.classList.add('show');
+
+            // Update status
+            checkStatus();
+
+            // Hide success message after 5 seconds
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 5000);
+        }
+
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+
+        // Check status on page load
+        window.addEventListener('DOMContentLoaded', checkStatus);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,34 @@
+[
+    {
+        "id": "rm1",
+        "date": "2026-01-05",
+        "itemName": "Tea Leaves",
+        "quantity": "10 kg",
+        "price": 800,
+        "notes": "Premium Assam tea"
+    },
+    {
+        "id": "rm2",
+        "date": "2026-01-05",
+        "itemName": "Coffee Powder",
+        "quantity": "5 kg",
+        "price": 1200,
+        "notes": "Filter coffee blend"
+    },
+    {
+        "id": "rm3",
+        "date": "2026-01-08",
+        "itemName": "Milk",
+        "quantity": "50 liters",
+        "price": 2500,
+        "notes": "Daily supply"
+    },
+    {
+        "id": "rm4",
+        "date": "2026-01-08",
+        "itemName": "Sugar",
+        "quantity": "20 kg",
+        "price": 900,
+        "notes": "White sugar"
+    }
+]

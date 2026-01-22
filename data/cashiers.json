@@ -1,0 +1,51 @@
+[
+    {
+        "id": "cashier1",
+        "name": "Vignesh",
+        "email": "vignesh@chaitime.com",
+        "active": true,
+        "createdAt": "2026-01-12T13:31:06+05:30"
+    },
+    {
+        "id": "cashier2",
+        "name": "Aravinth",
+        "email": "aravinth@chaitime.com",
+        "active": true,
+        "createdAt": "2026-01-12T13:31:06+05:30"
+    },
+    {
+        "id": "cashier3",
+        "name": "Senthil",
+        "email": "senthil@chaitime.com",
+        "active": true,
+        "createdAt": "2026-01-12T13:31:06+05:30"
+    },
+    {
+        "id": "cashier4",
+        "name": "Siva Sakthi",
+        "email": "sivasakthi@chaitime.com",
+        "active": true,
+        "createdAt": "2026-01-12T13:31:06+05:30"
+    },
+    {
+        "id": "cashier5",
+        "name": "Krishnan",
+        "email": "krishnan@chaitime.com",
+        "active": true,
+        "createdAt": "2026-01-12T13:31:06+05:30"
+    },
+    {
+        "id": "cashier6",
+        "name": "Balu",
+        "email": "balu@chaitime.com",
+        "active": true,
+        "createdAt": "2026-01-12T13:31:06+05:30"
+    },
+    {
+        "id": "cashier7",
+        "name": "Jagatheesh",
+        "email": "jagatheesh@chaitime.com",
+        "active": true,
+        "createdAt": "2026-01-12T13:31:06+05:30"
+    }
+]

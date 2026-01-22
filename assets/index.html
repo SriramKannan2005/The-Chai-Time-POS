@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Chai Time - Point of Sale System">
+    <title>Chai Time ☕ - POS System</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/filter-styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- Login Screen -->
+    <section id="login-screen" class="screen active">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="cafe-logo" id="cafe-logo">
+                    <img src="assets/images/logo.png" alt="Chai Time Logo" class="logo-image">
+                    <h1>Chai Time</h1>
+                    <p class="tagline">Premium Tea & Coffee Experience</p>
+                </div>
+
+                <div class="cashier-login">
+                    <h2>Cashier Login</h2>
+                    <form id="cashier-login-form">
+                        <div class="form-group">
+                            <label for="cashier-select">Select Cashier</label>
+                            <select id="cashier-select" required>
+                                <option value="">-- Select Your Name --</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Owner Login Screen (Hidden by default) -->
+    <section id="owner-login-screen" class="screen">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="cafe-logo">
+                    <h1>🔐 Owner Access</h1>
+                </div>
+
+                <div class="owner-login">
+                    <h2>Admin Login</h2>
+                    <form id="owner-login-form">
+                        <div class="form-group">
+                            <label for="owner-email">Email</label>
+                            <input type="email" id="owner-email" placeholder="owner@chaitime.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="owner-password">Password</label>
+                            <input type="password" id="owner-password" placeholder="Enter admin password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Login as Owner</button>
+                        <button type="button" class="btn btn-secondary" id="back-to-cashier">Back to Cashier
+                            Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cashier Screen -->
+    <section id="cashier-screen" class="screen">
+        <header class="app-header">
+            <div class="header-left">
+                <img src="assets/images/logo.png" alt="Chai Time" class="header-logo">
+                <h2>Chai Time</h2>
+                <span class="cashier-name" id="current-cashier-name"></span>
+            </div>
+            <div class="header-right">
+                <span class="online-status" id="online-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Online</span>
+                </span>
+                <button class="btn btn-outline btn-sm" id="toggle-billing-btn">🧾 Current Bill</button>
+                <button class="btn btn-outline btn-sm" id="my-bills-btn">📋 My Bills</button>
+                <button class="btn btn-secondary btn-sm" id="close-shift-btn">Close Shift</button>
+                <button class="btn btn-secondary btn-sm" id="cashier-logout-btn">Logout</button>
+            </div>
+        </header>
+
+        <div class="cashier-layout">
+            <!-- Full Width: Item Selection -->
+            <div class="items-section items-section-full">
+                <!-- Search and Filter Bar -->
+                <div class="items-filter-bar">
+                    <div class="search-box">
+                        <input type="text" id="item-search" placeholder="🔍 Search items... (தேடுக...)"
+                            autocomplete="off">
+                        <button class="clear-search" id="clear-search" style="display: none;">×</button>
+                    </div>
+                    <div class="filter-controls">
+                        <select id="sort-items" class="sort-select">
+                            <option value="name">Sort by Name</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="category">Sort by Category</option>
+                        </select>
+                        <button class="btn btn-outline btn-sm" id="refresh-items">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Category Tabs -->
+                <div class="category-tabs" id="category-tabs">
+                    <button class="category-tab active" data-category="all">All Items</button>
+                    <!-- Dynamic category tabs will be added here -->
+                </div>
+
+                <!-- Items Count -->
+                <div class="items-count">
+                    <span id="items-count-text">Loading items...</span>
+                </div>
+
+                <div class="items-grid" id="items-grid">
+                    <!-- Items will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Billing Panel -->
+        <div class="billing-panel-floating" id="billing-panel-floating">
+            <div class="billing-panel-header">
+                <h3>🧾 Current Bill</h3>
+                <button class="close-billing-panel" id="close-billing-panel">×</button>
+            </div>
+
+            <div class="billing-panel-content">
+                <div class="cart-items" id="cart-items">
+                    <div class="empty-cart">
+                        <p>No items added yet</p>
+                        <p class="hint">Tap items to add to bill</p>
+                    </div>
+                </div>
+
+                <div class="bill-summary">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">₹0.00</span>
+                    </div>
+                    <div class="summary-row discount-row" id="discount-row" style="display: none;">
+                        <span>Discount (<span id="discount-percent">0</span>%):</span>
+                        <span id="discount-amount">₹0.00</span>
+                    </div>
+                    <div class="summary-row total-row">
+                        <span>Total:</span>
+                        <span id="total-amount">₹0.00</span>
+                    </div>
+                </div>
+
+                <div class="billing-actions">
+                    <button class="btn btn-secondary btn-block" id="clear-cart-btn">Clear Cart</button>
+                    <button class="btn btn-primary btn-block" id="proceed-payment-btn" disabled>Proceed to
+                        Payment</button>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="btn btn-outline btn-sm" id="reprint-btn">Reprint Last Bill</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Payment</h3>
+                <button class="close-modal" id="close-payment-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-amount">
+                    <p>Total Amount</p>
+                    <h2 id="payment-total">₹0.00</h2>
+                </div>
+
+                <div class="payment-modes">
+                    <button class="payment-mode-btn" data-mode="cash">
+                        <span class="icon">💵</span>
+                        <span>Cash</span>
+                    </button>
+                    <button class="payment-mode-btn" data-mode="upi">
+                        <span class="icon">📱</span>
+                        <span>UPI</span>
+                    </button>
+                </div>
+
+                <div id="upi-qr-section" class="upi-qr-section" style="display: none;">
+                    <p>Scan QR Code to Pay</p>
+                    <img id="upi-qr-image" src="" alt="UPI QR Code">
+                    <p class="upi-instruction">Ask customer to scan and pay ₹<span id="upi-amount"></span></p>
+                </div>
+
+                <div class="payment-actions">
+                    <button class="btn btn-secondary" id="cancel-payment-btn">Cancel</button>
+                    <button class="btn btn-success" id="confirm-payment-btn" disabled>Confirm Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Layout -->
+    <div id="print-layout" class="print-layout">
+        <div class="print-content">
+            <div class="print-header">
+                <h2 id="print-cafe-name">Mapla Tea Cafe</h2>
+                <p id="print-cafe-address">Premium Tea & Coffee</p>
+                <p class="print-divider">================================</p>
+            </div>
+
+            <div class="print-bill-info">
+                <p>Bill No: <span id="print-bill-number"></span></p>
+                <p>Date: <span id="print-date"></span></p>
+                <p>Cashier: <span id="print-cashier"></span></p>
+                <p class="print-divider">================================</p>
+            </div>
+
+            <div class="print-items">
+                <table id="print-items-table">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="print-items-body">
+                    </tbody>
+                </table>
+                <p class="print-divider">================================</p>
+            </div>
+
+            <div class="print-summary">
+                <p>Subtotal: <span id="print-subtotal"></span></p>
+                <p id="print-discount-line" style="display: none;">Discount: <span id="print-discount"></span></p>
+                <p class="print-total">Total: <span id="print-total"></span></p>
+                <p>Payment: <span id="print-payment-mode"></span></p>
+                <p class="print-divider">================================</p>
+            </div>
+
+            <div class="print-footer">
+                <p id="print-footer-text">Thank you for visiting!</p>
+                <p>Visit again soon ☕</p>
+            </div>
+        </div>
+
+        <div class="print-actions no-print">
+            <button class="btn btn-primary" id="print-btn">Print Bill</button>
+            <button class="btn btn-secondary" id="new-bill-btn">New Bill</button>
+        </div>
+    </div>
+
+    <!-- Shift Close Modal -->
+    <div id="shift-close-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Close Shift</h3>
+            </div>
+            <div class="modal-body">
+                <div class="shift-summary">
+                    <h4>Shift Summary</h4>
+                    <div class="summary-item">
+                        <span>Total Bills:</span>
+                        <span id="shift-bill-count">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Cash Total:</span>
+                        <span id="shift-cash-total">₹0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>UPI Total:</span>
+                        <span id="shift-upi-total">₹0.00</span>
+                    </div>
+                    <div class="summary-item total">
+                        <span>Grand Total:</span>
+                        <span id="shift-grand-total">₹0.00</span>
+                    </div>
+                </div>
+                <div class="shift-actions">
+                    <button class="btn btn-secondary" id="cancel-shift-close">Cancel</button>
+                    <button class="btn btn-primary" id="confirm-shift-close">Close Shift & Logout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Bills Modal -->
+    <div id="my-bills-modal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>📋 My Bills Today</h3>
+                <button class="close-modal" id="close-my-bills-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="bills-summary">
+                    <div class="summary-item">
+                        <span>Total Bills:</span>
+                        <span id="my-bills-count">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Total Sales:</span>
+                        <span id="my-bills-total">₹0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>Cash:</span>
+                        <span id="my-bills-cash">₹0.00</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>UPI:</span>
+                        <span id="my-bills-upi">₹0.00</span>
+                    </div>
+                </div>
+
+                <div class="bills-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Bill #</th>
+                                <th>Time</th>
+                                <th>Items</th>
+                                <th>Amount</th>
+                                <th>Payment</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="my-bills-table-body">
+                            <tr>
+                                <td colspan="6" class="loading">Loading bills...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bill Details Modal -->
+    <div id="bill-details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🧾 Bill Details</h3>
+                <button class="close-modal" id="close-bill-details-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="bill-details-header">
+                    <div class="detail-row">
+                        <span class="label">Bill Number:</span>
+                        <span class="value" id="detail-bill-number">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Date & Time:</span>
+                        <span class="value" id="detail-date-time">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Cashier:</span>
+                        <span class="value" id="detail-cashier">-</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Payment Mode:</span>
+                        <span class="value" id="detail-payment-mode">-</span>
+                    </div>
+                </div>
+
+                <div class="bill-details-items">
+                    <h4>Items</h4>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detail-items-body">
+                            <tr>
+                                <td colspan="4" class="loading">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bill-details-summary">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="detail-subtotal">₹0.00</span>
+                    </div>
+                    <div class="summary-row" id="detail-discount-row" style="display: none;">
+                        <span>Discount:</span>
+                        <span id="detail-discount">₹0.00</span>
+                    </div>
+                    <div class="summary-row total-row">
+                        <span>Total:</span>
+                        <span id="detail-total">₹0.00</span>
+                    </div>
+                </div>
+
+                <div class="bill-details-actions">
+                    <button class="btn btn-secondary" id="close-details-btn">Close</button>
+                    <button class="btn btn-primary" id="reprint-details-btn">Print Bill</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Owner Screen -->
+    <section id="owner-screen" class="screen">
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <div class="owner-layout">
+            <!-- Sidebar Navigation -->
+            <aside class="owner-sidebar" id="owner-sidebar">
+                <div class="sidebar-header">
+                    <img src="assets/images/logo.png" alt="Chai Time" class="sidebar-logo">
+                    <h2>Chai Time</h2>
+                    <p class="owner-badge">Owner Panel</p>
+                </div>
+                <nav class="sidebar-nav">
+                    <button class="nav-item active" data-section="dashboard">
+                        <span class="icon">📊</span>
+                        <span>Dashboard</span>
+                    </button>
+                    <button class="nav-item" data-section="reports">
+                        <span class="icon">📈</span>
+                        <span>Reports</span>
+                    </button>
+                    <button class="nav-item" data-section="raw-materials">
+                        <span class="icon">🛒</span>
+                        <span>Raw Materials</span>
+                    </button>
+                    <button class="nav-item" data-section="settings">
+                        <span class="icon">⚙️</span>
+                        <span>Settings</span>
+                    </button>
+                </nav>
+                <div class="sidebar-footer">
+                    <button class="btn btn-secondary btn-block" id="owner-logout-btn">Logout</button>
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="owner-content">
+                <!-- Dashboard Section -->
+                <div id="dashboard-section" class="owner-section active">
+                    <div class="section-header">
+                        <h2>Dashboard</h2>
+                        <p class="section-subtitle">Business Overview</p>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-info">
+                                <p class="stat-label">Today's Sales</p>
+                                <h3 class="stat-value" id="today-sales">₹0</h3>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📅</div>
+                            <div class="stat-info">
+                                <p class="stat-label">This Month</p>
+                                <h3 class="stat-value" id="month-sales">₹0</h3>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🧾</div>
+                            <div class="stat-info">
+                                <p class="stat-label">Total Bills Today</p>
+                                <h3 class="stat-value" id="today-bills">0</h3>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">💵</div>
+                            <div class="stat-info">
+                                <p class="stat-label">Today's Profit</p>
+                                <h3 class="stat-value" id="today-profit">₹0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h4>Monthly Sales Trend</h4>
+                            <canvas id="monthly-sales-chart"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h4>Payment Mode Distribution</h4>
+                            <canvas id="payment-mode-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-card">
+                            <h4>Top Selling Items (Today)</h4>
+                            <canvas id="items-chart"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h4>Cashier Performance (Today)</h4>
+                            <div id="cashier-performance-list">
+                                <p class="loading">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Items Sold Today Section -->
+                    <div class="section-header" style="margin-top: 2rem;">
+                        <h3>📦 Items Sold Today</h3>
+                    </div>
+                    <div class="items-sold-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Quantity Sold</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="items-sold-today-body">
+                                <tr>
+                                    <td colspan="3" class="loading">Loading...</td>
+                                </tr>
+                            </tbody>
+                            <tfoot id="items-sold-today-footer" style="display: none;">
+                                <tr>
+                                    <td><strong>Total</strong></td>
+                                    <td><strong id="total-items-sold">0</strong></td>
+                                    <td><strong id="total-items-revenue">₹0.00</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Reports Section -->
+                <div id="reports-section" class="owner-section">
+                    <div class="section-header">
+                        <h2>Reports</h2>
+                        <p class="section-subtitle">Detailed Analytics & Downloads</p>
+                    </div>
+
+                    <div class="report-tabs">
+                        <button class="report-tab active" data-report="item">Item-wise Sales</button>
+                        <button class="report-tab" data-report="cashier">Cashier Performance</button>
+                        <button class="report-tab" data-report="profit">Profit & Loss</button>
+                        <button class="report-tab" data-report="consolidated">Consolidated Report</button>
+                    </div>
+
+                    <div class="report-filters">
+                        <div class="filter-group">
+                            <label>From Date:</label>
+                            <input type="date" id="report-from-date">
+                        </div>
+                        <div class="filter-group">
+                            <label>To Date:</label>
+                            <input type="date" id="report-to-date">
+                        </div>
+                        <button class="btn btn-primary" id="generate-report-btn">Generate Report</button>
+                        <button class="btn btn-secondary" id="export-pdf-btn">📄 Export PDF</button>
+                        <button class="btn btn-secondary" id="export-excel-btn">📊 Export Excel</button>
+                    </div>
+
+                    <div id="report-content" class="report-content">
+                        <p class="hint">Select date range and click Generate Report</p>
+                    </div>
+                </div>
+
+                <!-- Raw Materials Section -->
+                <div id="raw-materials-section" class="owner-section">
+                    <div class="section-header">
+                        <h2>Raw Materials</h2>
+                        <p class="section-subtitle">Track Purchases for Profit Calculation</p>
+                        <button class="btn btn-primary" id="add-raw-material-btn">+ Add Purchase</button>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-card-small">
+                            <p class="stat-label">This Month's Purchases</p>
+                            <h3 class="stat-value" id="month-raw-materials">₹0</h3>
+                        </div>
+                        <div class="stat-card-small">
+                            <p class="stat-label">Today's Purchases</p>
+                            <h3 class="stat-value" id="today-raw-materials">₹0</h3>
+                        </div>
+                    </div>
+
+                    <div class="raw-materials-table-container">
+                        <table class="data-table" id="raw-materials-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Item Name</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="raw-materials-table-body">
+                                <tr>
+                                    <td colspan="6" class="loading">Loading purchases...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Settings Section -->
+                <div id="settings-section" class="owner-section">
+                    <div class="section-header">
+                        <h2>Settings</h2>
+                        <p class="section-subtitle">Shop Configuration</p>
+                    </div>
+
+                    <div class="settings-grid">
+                        <div class="settings-card">
+                            <h4>Shop Details</h4>
+                            <form id="shop-details-form">
+                                <div class="form-group">
+                                    <label>Cafe Name</label>
+                                    <input type="text" id="setting-cafe-name" placeholder="Chai Time" value="Chai Time">
+                                </div>
+                                <div class="form-group">
+                                    <label>Bill Footer Text</label>
+                                    <textarea id="setting-footer-text" rows="3"
+                                        placeholder="Thank you for visiting!">Thank you for visiting! Come again ☕</textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Shop Details</button>
+                            </form>
+                        </div>
+
+                        <div class="settings-card">
+                            <h4>UPI QR Code</h4>
+                            <form id="upi-settings-form">
+                                <div class="form-group">
+                                    <label>UPI QR Code URL</label>
+                                    <input type="url" id="setting-upi-qr" placeholder="https://example.com/qr.png">
+                                </div>
+                                <div class="qr-preview" id="qr-preview">
+                                    <img id="qr-preview-img" src="" alt="QR Preview" style="display: none;">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save UPI Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </section>
+
+    <!-- Raw Material Form Modal -->
+    <div id="raw-material-form-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Raw Material Purchase</h3>
+                <button class="close-modal" id="close-raw-material-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="raw-material-form">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="rm-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Item Name</label>
+                        <input type="text" id="rm-item-name" placeholder="Tea Leaves, Milk, Sugar, etc." required>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="text" id="rm-quantity" placeholder="10 kg, 50 liters, etc." required>
+                    </div>
+                    <div class="form-group">
+                        <label>Price (₹)</label>
+                        <input type="number" id="rm-price" min="0" step="0.01" placeholder="500.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes (Optional)</label>
+                        <textarea id="rm-notes" rows="2" placeholder="Additional details"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-rm-form">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Purchase</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Security & Configuration (must load before main script) -->
+    <script src="assets/js/security.js"></script>
+    <script src="assets/js/config.js"></script>
+
+    <!-- Main Application Scripts -->
+    <script src="assets/js/script.js"></script>
+    <script src="assets/js/owner-portal.js"></script>
+</body>
+
+</html>
