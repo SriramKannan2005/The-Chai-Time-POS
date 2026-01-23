@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Firebase Config (contains sensitive credentials)
+assets/js/config.js
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

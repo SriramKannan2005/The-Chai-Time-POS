@@ -2,16 +2,36 @@
 // Chai Time POS - Main Script
 // ===================================
 
-// Firebase Configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyAFq4BsqX69Gbo9TKD5CGWD4iMEwv4KPkQ",
-    authDomain: "chaitime-fa063.firebaseapp.com",
-    databaseURL: "https://chaitime-fa063-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "chaitime-fa063",
-    storageBucket: "chaitime-fa063.firebasestorage.app",
-    messagingSenderId: "357283195164",
-    appId: "1:357283195164:web:84ca7a59ba9b0d7f3132d9",
-    measurementId: "G-E0KP6BXQ6H"
+// Firebase Configuration - loaded from config.js
+// If FIREBASE_CONFIG is not defined, use empty config (demo mode)
+const firebaseConfig = typeof FIREBASE_CONFIG !== 'undefined' ? FIREBASE_CONFIG : null;
+
+// ===================================
+// Rate Limiter (Security)
+// ===================================
+const rateLimiter = {
+    timestamps: [],
+    maxRequests: 30,    // Max requests per time window
+    timeWindow: 60000,  // 1 minute in milliseconds
+
+    canProceed() {
+        const now = Date.now();
+        // Remove timestamps outside the time window
+        this.timestamps = this.timestamps.filter(t => now - t < this.timeWindow);
+
+        if (this.timestamps.length >= this.maxRequests) {
+            console.warn('⚠️ Rate limit exceeded');
+            return false;
+        }
+        this.timestamps.push(now);
+        return true;
+    },
+
+    getRemainingRequests() {
+        const now = Date.now();
+        this.timestamps = this.timestamps.filter(t => now - t < this.timeWindow);
+        return this.maxRequests - this.timestamps.length;
+    }
 };
 
 // Initialize Firebase
@@ -19,7 +39,7 @@ let app, auth, db, analytics;
 let isFirebaseInitialized = false;
 
 try {
-    if (typeof firebase !== 'undefined') {
+    if (typeof firebase !== 'undefined' && firebaseConfig) {
         app = firebase.initializeApp(firebaseConfig);
         auth = firebase.auth();
         db = firebase.database();
@@ -30,6 +50,8 @@ try {
 
         isFirebaseInitialized = true;
         console.log('✅ Firebase initialized successfully');
+    } else if (!firebaseConfig) {
+        console.warn('⚠️ Firebase config not found. Create assets/js/config.js from config.example.js');
     }
 } catch (error) {
     console.warn('⚠️ Firebase not initialized. Using demo mode.', error);
@@ -699,6 +721,12 @@ if (confirmPaymentBtn) {
 }
 
 async function processPayment(mode) {
+    // Rate limiting check
+    if (!rateLimiter.canProceed()) {
+        showToast('Too many requests. Please wait a moment.', 'warning');
+        return;
+    }
+
     showLoading(true);
 
     const subtotal = state.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);

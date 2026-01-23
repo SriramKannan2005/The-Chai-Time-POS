@@ -1,4 +1,4 @@
-# Mapla Tea Cafe ☕ - POS System
+# Chai Time ☕ - POS System
 
 A production-ready, cloud-deployable Point of Sale web application for a single-shop mini cafe/tea shop.
 
@@ -16,6 +16,7 @@ A production-ready, cloud-deployable Point of Sale web application for a single-
 - ✅ Shift close with summary (cash/UPI totals)
 - ✅ Offline billing with auto-sync
 - ✅ Online/offline status indicator
+- ✅ Rate limiting for security
 
 ### Owner Features
 - ✅ Secret owner access (triple-tap logo)
@@ -60,82 +61,104 @@ A production-ready, cloud-deployable Point of Sale web application for a single-
 
 ## 🏗️ Architecture
 
-**Strict 3-File Structure:**
-- `index.html` - All structure & screens
-- `styles.css` - All styling (warm cafe theme)
-- `script.js` - All application logic
-
-**No inline CSS or JavaScript**
-**No additional files required**
-
-## 🎨 Design
-
-- **Theme**: Warm cafe colors (brown, cream, soft green)
-- **Typography**: Poppins font family
-- **Responsive**: Mobile-first design
-- **Print**: Thermal printer optimized (58mm/80mm)
-- **Animations**: Smooth transitions and micro-interactions
+**File Structure:**
+```
+chai-time-pos/
+├── index.html              # Main application
+├── reset.html              # Data reset tool
+├── assets/
+│   ├── css/styles.css      # All styling
+│   ├── js/
+│   │   ├── config.js       # Firebase credentials (NOT in Git)
+│   │   ├── config.example.js # Template for config
+│   │   ├── script.js       # Main application logic
+│   │   └── owner-portal.js # Owner dashboard logic
+│   └── images/logo.png     # Shop logo
+├── data/                   # JSON data files
+├── .gitignore             # Ignores config.js
+└── SECURITY_SETUP.md      # Security configuration guide
+```
 
 ## 🚀 Quick Start
 
-### Demo Mode (No Firebase Required)
+### Step 1: Clone the Repository
 
-1. Open `index.html` in a web browser
-2. Use demo credentials:
-   - **Cashier**: Select any cashier, password: `demo123`
-   - **Owner**: Triple-tap logo, email: `owner@maplateacafe.com`, password: `owner123`
-
-### Production Setup with Firebase
-
-#### Step 1: Create Firebase Project
-
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Click "Add project"
-3. Enter project name: "Mapla Tea Cafe POS"
-4. Follow the setup wizard
-
-#### Step 2: Enable Firebase Services
-
-**Authentication:**
-1. Go to Authentication → Sign-in method
-2. Enable "Email/Password"
-
-**Firestore Database:**
-1. Go to Firestore Database
-2. Click "Create database"
-3. Start in production mode
-4. Choose your region
-
-**Hosting:**
-1. Go to Hosting
-2. Click "Get started"
-
-#### Step 3: Get Firebase Configuration
-
-1. Go to Project Settings → General
-2. Scroll to "Your apps"
-3. Click "Web app" (</> icon)
-4. Register app: "Mapla Tea Cafe POS"
-5. Copy the configuration object
-
-#### Step 4: Update Configuration
-
-Open `script.js` and replace the Firebase config (lines 8-15):
-
-```javascript
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
+```bash
+git clone https://github.com/SriramKannan2005/The-Chai-Time-POS.git
+cd The-Chai-Time-POS
 ```
 
-#### Step 5: Add Firebase SDKs
+### Step 2: Configure Firebase Credentials
 
-Add these script tags in `index.html` before the closing `</body>` tag (before `<script src="script.js"></script>`):
+1. Copy the example config file:
+   ```bash
+   cp assets/js/config.example.js assets/js/config.js
+   ```
+
+2. Edit `assets/js/config.js` with your Firebase credentials:
+   ```javascript
+   const FIREBASE_CONFIG = {
+       apiKey: "YOUR_API_KEY",
+       authDomain: "YOUR_PROJECT.firebaseapp.com",
+       databaseURL: "https://YOUR_PROJECT.firebasedatabase.app",
+       projectId: "YOUR_PROJECT",
+       storageBucket: "YOUR_PROJECT.appspot.com",
+       messagingSenderId: "YOUR_SENDER_ID",
+       appId: "YOUR_APP_ID",
+       measurementId: "YOUR_MEASUREMENT_ID"
+   };
+   ```
+
+### Step 3: Set Up Firebase Security
+
+⚠️ **IMPORTANT**: Read `SECURITY_SETUP.md` for complete security configuration including:
+- Firebase Security Rules
+- API Key domain restrictions  
+- Rate limiting
+- Firebase App Check
+
+### Step 4: Open the Application
+
+Open `index.html` in a web browser. Use these credentials:
+- **Cashier**: Select any cashier from dropdown
+- **Owner**: Triple-tap logo, email: `chaitime2026@gmail.com`, password: your Firebase password
+
+## 🔒 Security Features
+
+- ✅ **Credentials separated from code** - Firebase config in gitignored file
+- ✅ **Client-side rate limiting** - Prevents abuse (30 requests/minute)
+- ✅ **Firebase Security Rules** - Server-side access control
+- ✅ **Role-based access** - Cashier vs Owner permissions
+- ✅ **Immutable audit logs** - Cannot be deleted
+- ✅ **Offline-first** - Works without internet
+
+See `SECURITY_SETUP.md` for complete security configuration.
+
+## 📱 Usage Guide
+
+### Cashier Workflow
+
+1. **Login** → Select name from dropdown
+2. **Select Items** → Tap items to add to cart
+3. **Adjust Quantities** → Use +/- buttons
+4. **Proceed to Payment** → Choose Cash or UPI
+5. **Confirm Payment** → Bill is saved
+6. **Print Bill** → Thermal printer or save PDF
+7. **Close Shift** → View summary and logout
+
+### Owner Workflow
+
+1. **Login** → Triple-tap cafe logo → Enter credentials
+2. **Dashboard** → View real-time analytics
+3. **Manage Items** → Add/edit menu items with images
+4. **Manage Cashiers** → Add/remove staff
+5. **Configure Settings** → Shop details, discount, UPI QR
+6. **Generate Reports** → Analyze sales and profits
+7. **Review Audit Logs** → Track all system activities
+
+## 🌐 Deployment
+
+### Firebase Hosting
 
 ```html
 <!-- Firebase App (the core Firebase SDK) -->

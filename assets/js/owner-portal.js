@@ -49,6 +49,12 @@ let monthlyChart, paymentChart, itemsChart;
 async function loadDashboard() {
     console.log('Loading dashboard...');
 
+    // Rate limiting check
+    if (typeof rateLimiter !== 'undefined' && !rateLimiter.canProceed()) {
+        showToast('Too many requests. Please wait a moment.', 'warning');
+        return;
+    }
+
     await loadItemsFromJSON();
     await loadCashiersFromJSON();
 
@@ -402,6 +408,12 @@ async function loadRawMaterialsTable() {
     const tbody = document.getElementById('raw-materials-table-body');
     if (!tbody) return;
 
+    // Rate limiting check
+    if (typeof rateLimiter !== 'undefined' && !rateLimiter.canProceed()) {
+        showToast('Too many requests. Please wait a moment.', 'warning');
+        return;
+    }
+
     let rawMaterials = [];
 
     if (isFirebaseInitialized) {
@@ -484,6 +496,12 @@ function updateRawMaterialsSummary(rawMaterials) {
 async function deleteRawMaterial(id) {
     if (!confirm('Delete this purchase record?')) return;
 
+    // Rate limiting check
+    if (typeof rateLimiter !== 'undefined' && !rateLimiter.canProceed()) {
+        showToast('Too many requests. Please wait a moment.', 'warning');
+        return;
+    }
+
     if (isFirebaseInitialized) {
         try {
             await db.ref(`rawMaterials/${id}`).remove();
@@ -542,6 +560,12 @@ if (cancelRmBtn) {
 if (rmForm) {
     rmForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // Rate limiting check
+        if (typeof rateLimiter !== 'undefined' && !rateLimiter.canProceed()) {
+            showToast('Too many requests. Please wait a moment.', 'warning');
+            return;
+        }
 
         const newRM = {
             date: document.getElementById('rm-date').value,
@@ -617,6 +641,12 @@ if (generateReportBtn) {
 }
 
 async function generateReport(type, fromDate, toDate) {
+    // Rate limiting check
+    if (typeof rateLimiter !== 'undefined' && !rateLimiter.canProceed()) {
+        showToast('Too many requests. Please wait a moment.', 'warning');
+        return null;
+    }
+
     const start = new Date(fromDate);
     const end = new Date(toDate);
     end.setHours(23, 59, 59, 999);
