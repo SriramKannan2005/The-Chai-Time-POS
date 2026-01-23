@@ -399,6 +399,16 @@ function renderItems(items) {
     // Sort by priority (lower number = higher priority, displayed first)
     enabledItems.sort((a, b) => (a.priority || 99) - (b.priority || 99));
 
+    if (enabledItems.length === 0) {
+        grid.innerHTML = `
+            <div class="no-results">
+                <p>😕 No items found</p>
+                <p class="hint">Try a different search term or category</p>
+            </div>
+        `;
+        return;
+    }
+
     grid.innerHTML = enabledItems.map(item => `
         <div class="item-card" onclick="addToCart('${item.id}')">
             <img src="${item.imageUrl}" alt="${item.nameEn}" class="item-image" onerror="this.src='https://via.placeholder.com/300'">
@@ -411,6 +421,37 @@ function renderItems(items) {
     `).join('');
 }
 
+// Current active category for filtering
+let currentCategory = 'all';
+
+// Get filtered items based on current category and search term
+function getFilteredItems(searchTerm = '') {
+    let filteredItems = state.items;
+
+    // Category filtering
+    if (currentCategory !== 'all') {
+        // Normalize: replace underscores with spaces and convert to lowercase
+        // e.g. "bread_omelette" -> "bread omelette"
+        const normalizedCategory = currentCategory.replace(/_/g, ' ').toLowerCase();
+
+        filteredItems = filteredItems.filter(item => {
+            if (!item.category) return false;
+            return item.category.toLowerCase() === normalizedCategory;
+        });
+    }
+
+    if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase().trim();
+        filteredItems = filteredItems.filter(item =>
+            (item.nameEn && item.nameEn.toLowerCase().includes(term)) ||
+            (item.nameTa && item.nameTa.includes(term)) ||
+            (item.category && item.category.toLowerCase().includes(term))
+        );
+    }
+
+    return filteredItems;
+}
+
 // Category filtering
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.category-tab').forEach(tab => {
@@ -418,14 +459,87 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
             e.target.classList.add('active');
 
-            const category = e.target.dataset.category;
-            const filteredItems = category === 'all'
-                ? state.items
-                : state.items.filter(item => item.category === category);
-            renderItems(filteredItems);
+            currentCategory = e.target.dataset.category;
+            const searchInput = document.getElementById('item-search');
+            const searchTerm = searchInput ? searchInput.value : '';
+            renderItems(getFilteredItems(searchTerm));
         });
     });
+
+    // Search functionality
+    const searchInput = document.getElementById('item-search');
+    const searchClearBtn = document.getElementById('search-clear-btn');
+
+    if (searchInput) {
+        // Debounce search for performance
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const term = e.target.value;
+
+            // Show/hide clear button
+            if (searchClearBtn) {
+                searchClearBtn.style.display = term.length > 0 ? 'flex' : 'none';
+            }
+
+            searchTimeout = setTimeout(() => {
+                renderItems(getFilteredItems(term));
+            }, 200);
+        });
+
+        // Focus search on keyboard shortcut
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+F or Cmd+F to focus search (if on cashier screen)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f' && state.currentScreen === 'cashier-screen') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+            // Escape to clear search
+            if (e.key === 'Escape' && document.activeElement === searchInput) {
+                searchInput.value = '';
+                if (searchClearBtn) searchClearBtn.style.display = 'none';
+                renderItems(getFilteredItems(''));
+                searchInput.blur();
+            }
+        });
+    }
+
+    // Clear search button
+    if (searchClearBtn) {
+        searchClearBtn.addEventListener('click', () => {
+            if (searchInput) {
+                searchInput.value = '';
+                searchClearBtn.style.display = 'none';
+                renderItems(getFilteredItems(''));
+                searchInput.focus();
+            }
+        });
+    }
+
+    // Refresh items button
+    const refreshBtn = document.getElementById('refresh-items-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+            refreshBtn.classList.add('refreshing');
+            refreshBtn.textContent = '⏳ Loading...';
+
+            try {
+                await loadItems();
+                // Re-apply current filters
+                const searchTerm = searchInput ? searchInput.value : '';
+                renderItems(getFilteredItems(searchTerm));
+                showToast('Items refreshed successfully!', 'success');
+            } catch (error) {
+                console.error('Error refreshing items:', error);
+                showToast('Failed to refresh items', 'error');
+            } finally {
+                refreshBtn.classList.remove('refreshing');
+                refreshBtn.textContent = '🔄 Refresh';
+            }
+        });
+    }
 });
+
 
 // ===================================
 // Cart & Billing Module

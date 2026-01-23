@@ -93,11 +93,36 @@
         <div class="cashier-layout">
             <!-- Full Width: Item Selection -->
             <div class="items-section items-section-full">
-                <div class="category-tabs">
+                <!-- Search and Controls Bar -->
+                <div class="items-toolbar">
+                    <div class="search-container">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="item-search" class="item-search-input" placeholder="Search items..."
+                            autocomplete="off">
+                        <button class="search-clear-btn" id="search-clear-btn" style="display: none;">×</button>
+                    </div>
+                    <button class="btn btn-outline btn-sm refresh-items-btn" id="refresh-items-btn"
+                        title="Refresh Items">
+                        🔄 Refresh
+                    </button>
+                </div>
+
+                <!-- Category Tabs -->
+                <div class="category-tabs" id="category-tabs">
                     <button class="category-tab active" data-category="all">All Items</button>
-                    <button class="category-tab" data-category="Tea">Tea</button>
-                    <button class="category-tab" data-category="Coffee">Coffee</button>
-                    <button class="category-tab" data-category="Snacks">Snacks</button>
+                    <button class="category-tab" data-category="bread_omelette">Bread & Omelette</button>
+                    <button class="category-tab" data-category="buns">Buns</button>
+                    <button class="category-tab" data-category="burgers">Burgers</button>
+                    <button class="category-tab" data-category="chats">Chats</button>
+                    <button class="category-tab" data-category="desserts">Desserts</button>
+                    <button class="category-tab" data-category="french_fries">French Fries</button>
+                    <button class="category-tab" data-category="fried_items">Fried Items</button>
+                    <button class="category-tab" data-category="maggi">Maggi</button>
+                    <button class="category-tab" data-category="milk">Milk</button>
+                    <button class="category-tab" data-category="mojito">Mojito</button>
+                    <button class="category-tab" data-category="pizza">Pizza</button>
+                    <button class="category-tab" data-category="rice">Rice</button>
+                    <button class="category-tab" data-category="sandwich">Sandwich</button>
                 </div>
 
                 <div class="items-grid" id="items-grid">
