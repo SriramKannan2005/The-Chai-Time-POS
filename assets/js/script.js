@@ -796,6 +796,61 @@ function savePendingBill(billData) {
     }
 }
 
+// Sync pending bills from localStorage to Firebase
+async function syncPendingBills() {
+    if (!isFirebaseInitialized || !navigator.onLine) {
+        console.log('⏸️ Sync skipped: Firebase not initialized or offline');
+        return;
+    }
+
+    const bills = JSON.parse(localStorage.getItem('bills') || '[]');
+    if (bills.length === 0) {
+        console.log('✅ No pending bills to sync');
+        return;
+    }
+
+    console.log(`📡 Syncing ${bills.length} pending bill(s) to Firebase...`);
+    const syncedBillNumbers = [];
+
+    for (const bill of bills) {
+        try {
+            // Mark as synced before pushing
+            bill.synced = true;
+            await db.ref('bills').push(bill);
+            syncedBillNumbers.push(bill.billNumber);
+            console.log(`✅ Bill #${bill.billNumber} synced to Firebase`);
+        } catch (error) {
+            console.error(`❌ Failed to sync bill #${bill.billNumber}:`, error);
+        }
+    }
+
+    // Remove synced bills from localStorage
+    if (syncedBillNumbers.length > 0) {
+        const remainingBills = bills.filter(b => !syncedBillNumbers.includes(b.billNumber));
+        localStorage.setItem('bills', JSON.stringify(remainingBills));
+        console.log(`✅ Synced ${syncedBillNumbers.length} bill(s). ${remainingBills.length} remaining.`);
+
+        if (syncedBillNumbers.length > 0) {
+            showToast(`${syncedBillNumbers.length} bill(s) synced to cloud ☁️`, 'success');
+        }
+    }
+}
+
+// Auto-sync when coming online
+window.addEventListener('online', () => {
+    console.log('🌐 Network restored. Syncing pending bills...');
+    showToast('Connection restored! Syncing bills...', 'info');
+    syncPendingBills();
+});
+
+// Sync on page load if online
+document.addEventListener('DOMContentLoaded', () => {
+    if (isFirebaseInitialized && navigator.onLine) {
+        // Delay sync slightly to let Firebase fully initialize
+        setTimeout(syncPendingBills, 2000);
+    }
+});
+
 // ===================================
 // Print Module
 // ===================================

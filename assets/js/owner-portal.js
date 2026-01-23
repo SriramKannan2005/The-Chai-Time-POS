@@ -658,20 +658,25 @@ function generateItemWiseReport(bills) {
     bills.forEach(bill => {
         if (bill.items) {
             bill.items.forEach(item => {
-                if (!itemStats[item.nameEn]) {
-                    itemStats[item.nameEn] = {
+                // Use item.name (how it's saved in bills) with fallback to item.nameEn
+                const itemName = item.name || item.nameEn || 'Unknown Item';
+
+                if (!itemStats[itemName]) {
+                    itemStats[itemName] = {
                         quantity: 0,
                         revenue: 0,
                         cost: 0
                     };
                 }
 
-                itemStats[item.nameEn].quantity += item.quantity || 0;
-                itemStats[item.nameEn].revenue += (item.sellingPrice * item.quantity) || 0;
+                itemStats[itemName].quantity += item.quantity || 0;
+                // Use item.price (how it's saved in bills) with fallback to item.sellingPrice
+                itemStats[itemName].revenue += ((item.price || item.sellingPrice || 0) * (item.quantity || 0));
 
-                const menuItem = state.items.find(i => i.nameEn === item.nameEn);
+                // Find menu item for cost calculation - check both name and nameEn
+                const menuItem = state.items.find(i => i.nameEn === itemName || i.name === itemName);
                 if (menuItem) {
-                    itemStats[item.nameEn].cost += (menuItem.costPrice * item.quantity) || 0;
+                    itemStats[itemName].cost += ((menuItem.costPrice || 0) * (item.quantity || 0));
                 }
             });
         }
@@ -728,9 +733,10 @@ async function generateProfitReportAsync(bills, fromDate, toDate) {
     bills.forEach(bill => {
         if (bill.items) {
             bill.items.forEach(item => {
-                const menuItem = state.items.find(i => i.nameEn === item.nameEn);
+                const itemName = item.name || item.nameEn || '';
+                const menuItem = state.items.find(i => i.nameEn === itemName || i.name === itemName);
                 if (menuItem) {
-                    totalItemCosts += (menuItem.costPrice * item.quantity) || 0;
+                    totalItemCosts += ((menuItem.costPrice || 0) * (item.quantity || 0));
                 }
             });
         }
