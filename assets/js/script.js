@@ -138,26 +138,10 @@ function showToast(message, type = 'info') {
 }
 
 function showLoading(show = true) {
-    let loader = document.getElementById('global-loader');
-    if (!loader) {
-        loader = document.createElement('div');
-        loader.id = 'global-loader';
-        loader.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        `;
-        loader.innerHTML = '<div style="color: white; font-size: 24px;">Loading...</div>';
-        document.body.appendChild(loader);
+    const loader = document.getElementById('loading-overlay');
+    if (loader) {
+        loader.style.display = show ? 'flex' : 'none';
     }
-    loader.style.display = show ? 'flex' : 'none';
 }
 
 function generateId() {
@@ -365,14 +349,20 @@ function populateCashierDropdown(cashiers) {
     }
 }
 
-async function loadItems() {
+async function loadItems(forceRefresh = false) {
     try {
-        const response = await fetch('data/items.json');
+        const url = forceRefresh ? `data/items.json?t=${Date.now()}` : 'data/items.json';
+        const response = await fetch(url);
         if (response.ok) {
             const items = await response.json();
             if (items && items.length > 0) {
                 state.items = items;
-                renderItems(items);
+                // If it's a refresh, we don't want to reset the view blindly if we were filtering,
+                // but for simplicity here we just render all or let the caller loop back.
+                // Actually to avoid flash, we update state.items. The caller (refresh button) will re-render with filters.
+                if (!forceRefresh) {
+                    renderItems(items);
+                }
                 console.log('✅ Loaded items from local JSON file');
                 return;
             }
@@ -423,10 +413,18 @@ function renderItems(items) {
 
 // Current active category for filtering
 let currentCategory = 'all';
+let currentSortOrder = 'default';
 
-// Get filtered items based on current category and search term
+// Apply current filters and sorting, then render
+function applyFilters() {
+    const searchInput = document.getElementById('item-search');
+    const searchTerm = searchInput ? searchInput.value : '';
+    renderItems(getFilteredItems(searchTerm));
+}
+
+// Get filtered and sorted items based on current category, search term, and sort order
 function getFilteredItems(searchTerm = '') {
-    let filteredItems = state.items;
+    let filteredItems = [...state.items];
 
     // Category filtering
     if (currentCategory !== 'all') {
@@ -447,6 +445,26 @@ function getFilteredItems(searchTerm = '') {
             (item.nameTa && item.nameTa.includes(term)) ||
             (item.category && item.category.toLowerCase().includes(term))
         );
+    }
+
+    // Apply sorting
+    switch (currentSortOrder) {
+        case 'name-asc':
+            filteredItems.sort((a, b) => (a.nameEn || '').localeCompare(b.nameEn || ''));
+            break;
+        case 'name-desc':
+            filteredItems.sort((a, b) => (b.nameEn || '').localeCompare(a.nameEn || ''));
+            break;
+        case 'price-asc':
+            filteredItems.sort((a, b) => (a.sellingPrice || 0) - (b.sellingPrice || 0));
+            break;
+        case 'price-desc':
+            filteredItems.sort((a, b) => (b.sellingPrice || 0) - (a.sellingPrice || 0));
+            break;
+        default:
+            // Default: sort by priority
+            filteredItems.sort((a, b) => (a.priority || 99) - (b.priority || 99));
+            break;
     }
 
     return filteredItems;
@@ -516,25 +534,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Sort dropdown functionality
+    const sortSelect = document.getElementById('sort-select');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', (e) => {
+            currentSortOrder = e.target.value;
+            applyFilters();
+        });
+    }
+
     // Refresh items button
     const refreshBtn = document.getElementById('refresh-items-btn');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', async () => {
             refreshBtn.classList.add('refreshing');
-            refreshBtn.textContent = '⏳ Loading...';
+            showLoading(true);
+
+            // Minimum loading time for better UX (so user sees the spinner)
+            const minLoadTime = new Promise(resolve => setTimeout(resolve, 500));
 
             try {
-                await loadItems();
-                // Re-apply current filters
-                const searchTerm = searchInput ? searchInput.value : '';
-                renderItems(getFilteredItems(searchTerm));
+                await Promise.all([loadItems(true), minLoadTime]);
+
+                // Reset sort order to default
+                currentSortOrder = 'default';
+                if (sortSelect) {
+                    sortSelect.value = 'default';
+                }
+
+                // Re-apply current filters and sorting
+                applyFilters();
                 showToast('Items refreshed successfully!', 'success');
             } catch (error) {
                 console.error('Error refreshing items:', error);
                 showToast('Failed to refresh items', 'error');
             } finally {
+                showLoading(false);
                 refreshBtn.classList.remove('refreshing');
-                refreshBtn.textContent = '🔄 Refresh';
             }
         });
     }
