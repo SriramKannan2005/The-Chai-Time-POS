@@ -657,7 +657,10 @@ function renderCart() {
             <div class="cart-item-controls">
                 <div class="quantity-control">
                     <button class="quantity-btn" onclick="updateQuantity('${item.id}', -1)">−</button>
-                    <span class="quantity-value">${item.quantity}</span>
+                    <input type="number" class="quantity-input" value="${item.quantity}" min="1" max="999"
+                        onchange="setQuantity('${item.id}', this.value)"
+                        onclick="this.select()"
+                        inputmode="numeric" />
                     <button class="quantity-btn" onclick="updateQuantity('${item.id}', 1)">+</button>
                 </div>
                 <button class="remove-item" onclick="removeFromCart('${item.id}')">×</button>
@@ -680,6 +683,21 @@ function updateQuantity(itemId, delta) {
             calculateTotal();
         }
     }
+}
+
+function setQuantity(itemId, value) {
+    const item = state.cart.find(cartItem => cartItem.id === itemId);
+    if (!item) return;
+
+    const newQty = parseInt(value);
+    if (isNaN(newQty) || newQty <= 0) {
+        removeFromCart(itemId);
+        return;
+    }
+
+    item.quantity = Math.min(newQty, 999);
+    renderCart();
+    calculateTotal();
 }
 
 function removeFromCart(itemId) {

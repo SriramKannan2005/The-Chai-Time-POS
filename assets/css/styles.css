@@ -583,10 +583,32 @@ textarea,
     background: var(--secondary-brown);
 }
 
-.quantity-value {
-    min-width: 30px;
+.quantity-input {
+    width: 45px;
     text-align: center;
     font-weight: 600;
+    font-size: var(--font-size-base);
+    font-family: var(--font-family);
+    border: 2px solid var(--gray);
+    border-radius: var(--radius-sm);
+    padding: 0.2rem;
+    background: var(--white);
+    color: var(--black);
+    transition: border-color var(--transition-base);
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.quantity-input:focus {
+    outline: none;
+    border-color: var(--primary-brown);
+    box-shadow: 0 0 0 2px rgba(139, 90, 43, 0.15);
 }
 
 .remove-item {
@@ -1963,8 +1985,8 @@ textarea,
         font-size: var(--font-size-base);
     }
 
-    .quantity-value {
-        min-width: 25px;
+    .quantity-input {
+        width: 40px;
         font-size: var(--font-size-sm);
     }
 
