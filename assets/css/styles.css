@@ -1586,21 +1586,44 @@ textarea,
 
 @media print {
     body * {
-        visibility: hidden;
+        display: none !important;
     }
 
+    body,
+    .print-layout,
+    .print-layout.active,
     .print-content,
     .print-content * {
-        visibility: visible;
+        display: block !important;
+        visibility: visible !important;
     }
 
-    .print-content {
+    .print-layout,
+    .print-layout.active {
         position: absolute;
         left: 0;
         top: 0;
+        width: 100%;
+        height: auto;
+        background: white;
+        z-index: 99999;
+    }
+
+    .print-content {
+        position: relative;
         width: 80mm;
         padding: 5mm;
         background: white;
+    }
+
+    .print-content table,
+    .print-content thead,
+    .print-content tbody,
+    .print-content tr,
+    .print-content th,
+    .print-content td {
+        display: revert !important;
+        visibility: visible !important;
     }
 
     .no-print {
@@ -2317,34 +2340,7 @@ textarea,
    Print Optimization
    All platforms
    =================================== */
-@media print {
-    body * {
-        visibility: hidden;
-    }
-
-    .print-content,
-    .print-content * {
-        visibility: visible;
-    }
-
-    .print-content {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 80mm;
-        padding: 5mm;
-        background: white;
-    }
-
-    .no-print {
-        display: none !important;
-    }
-
-    @page {
-        size: 80mm auto;
-        margin: 0;
-    }
-}
+/* Print styles consolidated above */
 
 /* ===================================
    Owner Portal - Mobile Responsive Sidebar
