@@ -49,12 +49,11 @@ try {
         }
 
         isFirebaseInitialized = true;
-        console.log('✅ Firebase initialized successfully');
     } else if (!firebaseConfig) {
-        console.warn('⚠️ Firebase config not found. Create assets/js/config.js from config.example.js');
+        // Firebase config not found - running in demo mode
     }
 } catch (error) {
-    console.warn('⚠️ Firebase not initialized. Using demo mode.', error);
+    // Firebase not initialized - using demo mode
 }
 
 // ===================================
@@ -92,9 +91,9 @@ const state = {
 // ===================================
 
 function formatCurrency(amount) {
+    // Sanitize before display
     const num = parseFloat(amount);
     if (isNaN(num)) {
-        console.warn('formatCurrency received NaN:', amount);
         return '₹0.00';
     }
     return `₹${num.toFixed(2)}`;
@@ -322,16 +321,14 @@ async function loadCashiers() {
             if (cashiers && cashiers.length > 0) {
                 state.cashiers = cashiers;
                 populateCashierDropdown(cashiers);
-                console.log('✅ Loaded cashiers from local JSON file');
                 return;
             }
         }
     } catch (error) {
-        console.warn('Could not load cashiers from JSON file:', error);
+        // Fallback to demo cashiers if JSON file fails
     }
 
     // Fallback to demo cashiers if JSON file fails
-    console.log('Using demo cashiers');
     state.cashiers = demoCashiers;
     populateCashierDropdown(state.cashiers);
 }
@@ -363,16 +360,15 @@ async function loadItems(forceRefresh = false) {
                 if (!forceRefresh) {
                     renderItems(items);
                 }
-                console.log('✅ Loaded items from local JSON file');
+
                 return;
             }
         }
     } catch (error) {
-        console.warn('Could not load items from JSON file:', error);
+        // Could not load items from JSON file
     }
 
     // Fallback to demo items if JSON file fails
-    console.log('Using demo items');
     state.items = [
         { id: 'item1', nameEn: 'Masala Tea', nameTa: 'மசாலா டீ', category: 'Tea', costPrice: 8, sellingPrice: 15, imageUrl: 'https://images.unsplash.com/photo-1597318130293-c8eb8d0e4d81?w=400', enabled: true },
         { id: 'item2', nameEn: 'Filter Coffee', nameTa: 'பில்டர் காபி', category: 'Coffee', costPrice: 10, sellingPrice: 20, imageUrl: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400', enabled: true }
@@ -714,9 +710,7 @@ function calculateTotal() {
         return !isNaN(price) && !isNaN(quantity) && price > 0 && quantity > 0;
     });
 
-    if (validItems.length !== state.cart.length) {
-        console.warn('Some cart items have invalid prices or quantities');
-    }
+
 
     const subtotal = validItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -925,7 +919,6 @@ async function processPayment(mode) {
                 await db.ref('bills').push(billData);
                 billData.synced = true;
             } catch (firebaseError) {
-                console.warn('Firebase save failed, falling back to local storage:', firebaseError);
                 savePendingBill(billData);
             }
         } else {
@@ -986,7 +979,7 @@ function savePendingBill(billData) {
         const bills = JSON.parse(localStorage.getItem('bills') || '[]');
         bills.push(billData);
         localStorage.setItem('bills', JSON.stringify(bills));
-        console.log('Bill saved to localStorage:', billData.billNumber);
+
     } catch (error) {
         console.error('Error saving bill to localStorage:', error);
     }
@@ -995,17 +988,15 @@ function savePendingBill(billData) {
 // Sync pending bills from localStorage to Firebase
 async function syncPendingBills() {
     if (!isFirebaseInitialized || !navigator.onLine) {
-        console.log('⏸️ Sync skipped: Firebase not initialized or offline');
         return;
     }
 
     const bills = JSON.parse(localStorage.getItem('bills') || '[]');
     if (bills.length === 0) {
-        console.log('✅ No pending bills to sync');
         return;
     }
 
-    console.log(`📡 Syncing ${bills.length} pending bill(s) to Firebase...`);
+
     const syncedBillNumbers = [];
 
     for (const bill of bills) {
@@ -1014,7 +1005,7 @@ async function syncPendingBills() {
             bill.synced = true;
             await db.ref('bills').push(bill);
             syncedBillNumbers.push(bill.billNumber);
-            console.log(`✅ Bill #${bill.billNumber} synced to Firebase`);
+
         } catch (error) {
             console.error(`❌ Failed to sync bill #${bill.billNumber}:`, error);
         }
@@ -1024,7 +1015,7 @@ async function syncPendingBills() {
     if (syncedBillNumbers.length > 0) {
         const remainingBills = bills.filter(b => !syncedBillNumbers.includes(b.billNumber));
         localStorage.setItem('bills', JSON.stringify(remainingBills));
-        console.log(`✅ Synced ${syncedBillNumbers.length} bill(s). ${remainingBills.length} remaining.`);
+
 
         if (syncedBillNumbers.length > 0) {
             showToast(`${syncedBillNumbers.length} bill(s) synced to cloud ☁️`, 'success');
@@ -1034,7 +1025,7 @@ async function syncPendingBills() {
 
 // Auto-sync when coming online
 window.addEventListener('online', () => {
-    console.log('🌐 Network restored. Syncing pending bills...');
+
     showToast('Connection restored! Syncing bills...', 'info');
     syncPendingBills();
 });
@@ -1176,7 +1167,7 @@ async function calculateShiftSummary() {
     // Fetch from Firebase if available
     if (isFirebaseInitialized && navigator.onLine) {
         try {
-            console.log('📡 Fetching shift bills from Firebase...');
+
             const snapshot = await db.ref('bills')
                 .orderByChild('cashierId')
                 .equalTo(state.currentUser?.id)
@@ -1191,9 +1182,8 @@ async function calculateShiftSummary() {
                     }
                 });
             }
-            console.log('✅ Fetched', allBills.length, 'bills from Firebase for shift');
         } catch (firebaseError) {
-            console.warn('⚠️ Firebase fetch failed for shift summary:', firebaseError);
+            // Firebase fetch failed for shift summary - using local data
         }
     }
 
@@ -1304,7 +1294,7 @@ async function loadMyBills() {
         // Fetch from Firebase if available
         if (isFirebaseInitialized && navigator.onLine) {
             try {
-                console.log('📡 Fetching bills from Firebase for cashier:', state.currentUser.id);
+
                 const snapshot = await db.ref('bills')
                     .orderByChild('cashierId')
                     .equalTo(state.currentUser.id)
@@ -1321,9 +1311,8 @@ async function loadMyBills() {
                         }
                     });
                 }
-                console.log('✅ Fetched', myBills.length, 'bills from Firebase for today');
             } catch (firebaseError) {
-                console.warn('⚠️ Firebase fetch failed, using localStorage:', firebaseError);
+                // Firebase fetch failed - using localStorage
             }
         }
 
@@ -1413,12 +1402,12 @@ async function viewBillDetails(billNumber) {
 
         // Convert billNumber to number for proper comparison
         const billNum = typeof billNumber === 'string' ? parseInt(billNumber, 10) : billNumber;
-        console.log('🔍 Looking for bill:', billNum);
+
 
         // Try Firebase first (since bills are now stored there)
         if (isFirebaseInitialized && navigator.onLine) {
             try {
-                console.log('📡 Searching Firebase for bill:', billNum);
+
                 const snapshot = await db.ref('bills')
                     .orderByChild('billNumber')
                     .equalTo(billNum)
@@ -1427,7 +1416,7 @@ async function viewBillDetails(billNumber) {
                 if (snapshot.exists()) {
                     snapshot.forEach(childSnapshot => {
                         billData = childSnapshot.val();
-                        console.log('✅ Found bill in Firebase:', billData.billNumber);
+
                     });
                 }
             } catch (error) {
@@ -1437,12 +1426,10 @@ async function viewBillDetails(billNumber) {
 
         // If not found in Firebase, try localStorage
         if (!billData) {
-            console.log('🔍 Searching localStorage for bill:', billNum);
+
             const localBills = JSON.parse(localStorage.getItem('bills') || '[]');
             billData = localBills.find(bill => bill.billNumber === billNum || bill.billNumber === billNumber);
-            if (billData) {
-                console.log('✅ Found bill in localStorage:', billData.billNumber);
-            }
+
         }
 
         if (!billData) {
@@ -1665,12 +1652,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    console.log('Chai Time POS System initialized');
-    console.log('Demo Credentials:');
-    console.log('Cashier: Select any cashier');
-    console.log('Owner: test@test.com, password: test123');
-    console.log('');
-    console.log('🔑 Admin Access Shortcuts:');
-    console.log('  - Keyboard: Ctrl+Shift+A (on login screen)');
-    console.log('  - Logo: Tap 3 times on the cafe logo');
 });

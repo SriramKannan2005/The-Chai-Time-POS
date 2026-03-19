@@ -20,7 +20,6 @@ async function loadItemsFromJSON() {
     const items = await loadJSONData('items.json');
     if (items.length > 0) {
         state.items = items;
-        console.log('✅ Loaded items from JSON:', items.length);
     }
     return items;
 }
@@ -29,14 +28,13 @@ async function loadCashiersFromJSON() {
     const cashiers = await loadJSONData('cashiers.json');
     if (cashiers.length > 0) {
         state.cashiers = cashiers;
-        console.log('✅ Loaded cashiers from JSON:', cashiers.length);
     }
     return cashiers;
 }
 
 async function loadRawMaterialsFromJSON() {
     const rawMaterials = await loadJSONData('raw-materials.json');
-    console.log('✅ Loaded raw materials from JSON:', rawMaterials.length);
+
     return rawMaterials;
 }
 
@@ -47,7 +45,7 @@ async function loadRawMaterialsFromJSON() {
 let monthlyChart, paymentChart, itemsChart;
 
 async function loadDashboard() {
-    console.log('Loading dashboard...');
+
 
     // Rate limiting check
     if (typeof rateLimiter !== 'undefined' && !rateLimiter.canProceed()) {
@@ -424,7 +422,7 @@ async function loadRawMaterialsTable() {
                 id: key,
                 ...rmData[key]
             }));
-            console.log('✅ Loaded raw materials from Firebase:', rawMaterials.length);
+
         } catch (error) {
             console.error('Error loading raw materials from Firebase:', error);
         }
@@ -438,7 +436,7 @@ async function loadRawMaterialsTable() {
                 for (const rm of rawMaterials) {
                     await db.ref('rawMaterials').push(rm);
                 }
-                console.log('✅ Saved initial raw materials to Firebase');
+
             } catch (error) {
                 console.error('Error saving to Firebase:', error);
             }
@@ -1043,4 +1041,4 @@ if (mobileMenuToggle && ownerSidebar) {
     });
 }
 
-console.log('✅ Owner Portal initialized');
+
