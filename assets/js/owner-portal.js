@@ -965,6 +965,421 @@ function displayReport(data, type) {
 }
 
 // ===================================
+// Export PDF Functionality
+// ===================================
+
+const exportPdfBtn = document.getElementById('export-pdf-btn');
+if (exportPdfBtn) {
+    exportPdfBtn.addEventListener('click', () => {
+        if (!ownerReportData) {
+            showToast('Please generate a report first', 'warning');
+            return;
+        }
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const fromDate = document.getElementById('report-from-date').value;
+            const toDate = document.getElementById('report-to-date').value;
+
+            // Title
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Chai Time - Report', 105, 20, { align: 'center' });
+
+            // Subtitle with date range
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'normal');
+            const reportTypeLabels = {
+                'item': 'Item-wise Sales Report',
+                'cashier': 'Cashier Performance Report',
+                'profit': 'Profit & Loss Report',
+                'consolidated': 'Consolidated Report'
+            };
+            doc.text(reportTypeLabels[ownerReportType] || 'Report', 105, 28, { align: 'center' });
+            doc.text(`Period: ${fromDate} to ${toDate}`, 105, 35, { align: 'center' });
+
+            doc.setDrawColor(139, 92, 246);
+            doc.setLineWidth(0.5);
+            doc.line(20, 38, 190, 38);
+
+            let yPos = 45;
+
+            switch (ownerReportType) {
+                case 'item':
+                    yPos = renderPdfTable(doc, yPos,
+                        ['Item Name', 'Qty Sold', 'Revenue', 'Cost', 'Profit'],
+                        ownerReportData.items.map(item => [
+                            item.name,
+                            item.quantity.toString(),
+                            formatCurrencyPlain(item.revenue),
+                            formatCurrencyPlain(item.cost),
+                            formatCurrencyPlain(item.profit)
+                        ]),
+                        [40, 20, 35, 35, 35]
+                    );
+                    // Totals
+                    const totalRevenue = ownerReportData.items.reduce((s, i) => s + i.revenue, 0);
+                    const totalProfit = ownerReportData.items.reduce((s, i) => s + i.profit, 0);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(10);
+                    doc.text(`Total Revenue: ${formatCurrencyPlain(totalRevenue)}   |   Total Profit: ${formatCurrencyPlain(totalProfit)}`, 20, yPos + 8);
+                    break;
+
+                case 'cashier':
+                    yPos = renderPdfTable(doc, yPos,
+                        ['Cashier', 'Bills', 'Cash Sales', 'UPI Sales', 'Total Sales'],
+                        ownerReportData.cashiers.map(c => [
+                            c.name,
+                            c.bills.toString(),
+                            formatCurrencyPlain(c.cash),
+                            formatCurrencyPlain(c.upi),
+                            formatCurrencyPlain(c.total)
+                        ]),
+                        [40, 20, 35, 35, 35]
+                    );
+                    break;
+
+                case 'profit':
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Profit & Loss Summary', 20, yPos);
+                    yPos += 10;
+
+                    const profitRows = [
+                        ['Total Revenue', formatCurrencyPlain(ownerReportData.revenue)],
+                        ['Item Costs', '-' + formatCurrencyPlain(ownerReportData.itemCosts)],
+                        ['Raw Material Costs', '-' + formatCurrencyPlain(ownerReportData.rawMaterialCosts)],
+                        ['Net Profit', formatCurrencyPlain(ownerReportData.profit)],
+                        ['Profit Margin', ownerReportData.profitMargin.toFixed(2) + '%']
+                    ];
+
+                    yPos = renderPdfTable(doc, yPos,
+                        ['Description', 'Amount'],
+                        profitRows,
+                        [90, 70]
+                    );
+                    break;
+
+                case 'consolidated':
+                    // Summary section
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Summary', 20, yPos);
+                    yPos += 8;
+
+                    const summaryRows = [
+                        ['Total Bills', ownerReportData.summary.totalBills.toString()],
+                        ['Total Revenue', formatCurrencyPlain(ownerReportData.summary.totalRevenue)],
+                        ['Cash Sales', formatCurrencyPlain(ownerReportData.summary.cashSales)],
+                        ['UPI Sales', formatCurrencyPlain(ownerReportData.summary.upiSales)]
+                    ];
+                    yPos = renderPdfTable(doc, yPos, ['Metric', 'Value'], summaryRows, [90, 70]);
+                    yPos += 10;
+
+                    // Profit/Loss section
+                    if (yPos > 250) { doc.addPage(); yPos = 20; }
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Profit & Loss', 20, yPos);
+                    yPos += 8;
+
+                    const plRows = [
+                        ['Revenue', formatCurrencyPlain(ownerReportData.profitLoss.revenue)],
+                        ['Total Costs', '-' + formatCurrencyPlain(ownerReportData.profitLoss.itemCosts + ownerReportData.profitLoss.rawMaterialCosts)],
+                        ['Net Profit', formatCurrencyPlain(ownerReportData.profitLoss.profit)]
+                    ];
+                    yPos = renderPdfTable(doc, yPos, ['Description', 'Amount'], plRows, [90, 70]);
+                    yPos += 10;
+
+                    // Item-wise section
+                    if (yPos > 220) { doc.addPage(); yPos = 20; }
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Item-wise Breakdown', 20, yPos);
+                    yPos += 8;
+
+                    if (ownerReportData.itemWise && ownerReportData.itemWise.items) {
+                        yPos = renderPdfTable(doc, yPos,
+                            ['Item', 'Qty', 'Revenue', 'Profit'],
+                            ownerReportData.itemWise.items.map(item => [
+                                item.name,
+                                item.quantity.toString(),
+                                formatCurrencyPlain(item.revenue),
+                                formatCurrencyPlain(item.profit)
+                            ]),
+                            [50, 20, 45, 45]
+                        );
+                    }
+                    break;
+            }
+
+            // Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(150);
+                doc.text(`Generated on ${new Date().toLocaleString('en-IN')}  |  Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
+                doc.setTextColor(0);
+            }
+
+            doc.save(`ChaiTime_Report_${fromDate}_to_${toDate}.pdf`);
+            showToast('PDF exported successfully!', 'success');
+        } catch (error) {
+            console.error('Error exporting PDF:', error);
+            showToast('Error exporting PDF. Please try again.', 'error');
+        }
+    });
+}
+
+// Helper: Render a table in PDF
+function renderPdfTable(doc, startY, headers, rows, colWidths) {
+    const startX = 20;
+    const rowHeight = 8;
+    const fontSize = 9;
+    let y = startY;
+
+    // Header row
+    doc.setFillColor(139, 92, 246);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(fontSize);
+    doc.setFont('helvetica', 'bold');
+
+    let totalWidth = colWidths.reduce((a, b) => a + b, 0);
+    doc.rect(startX, y - 5, totalWidth, rowHeight, 'F');
+
+    let x = startX;
+    headers.forEach((header, i) => {
+        doc.text(header, x + 2, y);
+        x += colWidths[i];
+    });
+
+    y += rowHeight;
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+
+    // Data rows
+    rows.forEach((row, rowIndex) => {
+        if (y > 275) {
+            doc.addPage();
+            y = 20;
+            // Re-draw header on new page
+            doc.setFillColor(139, 92, 246);
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.rect(startX, y - 5, totalWidth, rowHeight, 'F');
+            let hx = startX;
+            headers.forEach((header, i) => {
+                doc.text(header, hx + 2, y);
+                hx += colWidths[i];
+            });
+            y += rowHeight;
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'normal');
+        }
+
+        // Alternating row colors
+        if (rowIndex % 2 === 0) {
+            doc.setFillColor(245, 243, 255);
+            doc.rect(startX, y - 5, totalWidth, rowHeight, 'F');
+        }
+
+        x = startX;
+        row.forEach((cell, i) => {
+            const cellText = String(cell || '');
+            // Truncate long text to fit column
+            const maxChars = Math.floor(colWidths[i] / 2.2);
+            const displayText = cellText.length > maxChars ? cellText.substring(0, maxChars - 2) + '..' : cellText;
+            doc.text(displayText, x + 2, y);
+            x += colWidths[i];
+        });
+
+        y += rowHeight;
+    });
+
+    // Bottom border
+    doc.setDrawColor(200);
+    doc.line(startX, y - 5, startX + totalWidth, y - 5);
+
+    return y;
+}
+
+// Helper: Format currency without HTML entities (for PDF/Excel)
+function formatCurrencyPlain(amount) {
+    return '₹' + (amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ===================================
+// Export Excel Functionality
+// ===================================
+
+const exportExcelBtn = document.getElementById('export-excel-btn');
+if (exportExcelBtn) {
+    exportExcelBtn.addEventListener('click', () => {
+        if (!ownerReportData) {
+            showToast('Please generate a report first', 'warning');
+            return;
+        }
+
+        try {
+            const fromDate = document.getElementById('report-from-date').value;
+            const toDate = document.getElementById('report-to-date').value;
+            const wb = XLSX.utils.book_new();
+
+            switch (ownerReportType) {
+                case 'item': {
+                    const wsData = [
+                        ['Chai Time - Item-wise Sales Report'],
+                        [`Period: ${fromDate} to ${toDate}`],
+                        [],
+                        ['Item Name', 'Quantity Sold', 'Revenue (₹)', 'Cost (₹)', 'Profit (₹)'],
+                        ...ownerReportData.items.map(item => [
+                            item.name,
+                            item.quantity,
+                            item.revenue,
+                            item.cost,
+                            item.profit
+                        ]),
+                        [],
+                        ['TOTAL',
+                            ownerReportData.items.reduce((s, i) => s + i.quantity, 0),
+                            ownerReportData.items.reduce((s, i) => s + i.revenue, 0),
+                            ownerReportData.items.reduce((s, i) => s + i.cost, 0),
+                            ownerReportData.items.reduce((s, i) => s + i.profit, 0)
+                        ]
+                    ];
+                    const ws = XLSX.utils.aoa_to_sheet(wsData);
+                    applyExcelColumnWidths(ws, [30, 15, 15, 15, 15]);
+                    XLSX.utils.book_append_sheet(wb, ws, 'Item-wise Sales');
+                    break;
+                }
+
+                case 'cashier': {
+                    const wsData = [
+                        ['Chai Time - Cashier Performance Report'],
+                        [`Period: ${fromDate} to ${toDate}`],
+                        [],
+                        ['Cashier Name', 'Total Bills', 'Cash Sales (₹)', 'UPI Sales (₹)', 'Total Sales (₹)'],
+                        ...ownerReportData.cashiers.map(c => [
+                            c.name,
+                            c.bills,
+                            c.cash,
+                            c.upi,
+                            c.total
+                        ]),
+                        [],
+                        ['TOTAL',
+                            ownerReportData.cashiers.reduce((s, c) => s + c.bills, 0),
+                            ownerReportData.cashiers.reduce((s, c) => s + c.cash, 0),
+                            ownerReportData.cashiers.reduce((s, c) => s + c.upi, 0),
+                            ownerReportData.cashiers.reduce((s, c) => s + c.total, 0)
+                        ]
+                    ];
+                    const ws = XLSX.utils.aoa_to_sheet(wsData);
+                    applyExcelColumnWidths(ws, [25, 15, 18, 18, 18]);
+                    XLSX.utils.book_append_sheet(wb, ws, 'Cashier Performance');
+                    break;
+                }
+
+                case 'profit': {
+                    const wsData = [
+                        ['Chai Time - Profit & Loss Report'],
+                        [`Period: ${fromDate} to ${toDate}`],
+                        [],
+                        ['Description', 'Amount (₹)'],
+                        ['Total Revenue', ownerReportData.revenue],
+                        ['Item Costs', -ownerReportData.itemCosts],
+                        ['Raw Material Costs', -ownerReportData.rawMaterialCosts],
+                        [],
+                        ['Net Profit', ownerReportData.profit],
+                        ['Profit Margin (%)', parseFloat(ownerReportData.profitMargin.toFixed(2))]
+                    ];
+                    const ws = XLSX.utils.aoa_to_sheet(wsData);
+                    applyExcelColumnWidths(ws, [30, 20]);
+                    XLSX.utils.book_append_sheet(wb, ws, 'Profit & Loss');
+                    break;
+                }
+
+                case 'consolidated': {
+                    // Summary sheet
+                    const summaryData = [
+                        ['Chai Time - Consolidated Report'],
+                        [`Period: ${fromDate} to ${toDate}`],
+                        [],
+                        ['Summary'],
+                        ['Metric', 'Value'],
+                        ['Total Bills', ownerReportData.summary.totalBills],
+                        ['Total Revenue (₹)', ownerReportData.summary.totalRevenue],
+                        ['Cash Sales (₹)', ownerReportData.summary.cashSales],
+                        ['UPI Sales (₹)', ownerReportData.summary.upiSales],
+                        [],
+                        ['Profit & Loss'],
+                        ['Revenue (₹)', ownerReportData.profitLoss.revenue],
+                        ['Total Costs (₹)', -(ownerReportData.profitLoss.itemCosts + ownerReportData.profitLoss.rawMaterialCosts)],
+                        ['Net Profit (₹)', ownerReportData.profitLoss.profit]
+                    ];
+                    const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+                    applyExcelColumnWidths(summaryWs, [25, 20]);
+                    XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+
+                    // Item-wise sheet
+                    if (ownerReportData.itemWise && ownerReportData.itemWise.items) {
+                        const itemData = [
+                            ['Item-wise Breakdown'],
+                            [],
+                            ['Item Name', 'Quantity Sold', 'Revenue (₹)', 'Cost (₹)', 'Profit (₹)'],
+                            ...ownerReportData.itemWise.items.map(item => [
+                                item.name,
+                                item.quantity,
+                                item.revenue,
+                                item.cost,
+                                item.profit
+                            ])
+                        ];
+                        const itemWs = XLSX.utils.aoa_to_sheet(itemData);
+                        applyExcelColumnWidths(itemWs, [30, 15, 15, 15, 15]);
+                        XLSX.utils.book_append_sheet(wb, itemWs, 'Item-wise');
+                    }
+
+                    // Cashier-wise sheet
+                    if (ownerReportData.cashierWise && ownerReportData.cashierWise.cashiers) {
+                        const cashierData = [
+                            ['Cashier-wise Breakdown'],
+                            [],
+                            ['Cashier Name', 'Total Bills', 'Cash Sales (₹)', 'UPI Sales (₹)', 'Total Sales (₹)'],
+                            ...ownerReportData.cashierWise.cashiers.map(c => [
+                                c.name,
+                                c.bills,
+                                c.cash,
+                                c.upi,
+                                c.total
+                            ])
+                        ];
+                        const cashierWs = XLSX.utils.aoa_to_sheet(cashierData);
+                        applyExcelColumnWidths(cashierWs, [25, 15, 18, 18, 18]);
+                        XLSX.utils.book_append_sheet(wb, cashierWs, 'Cashier-wise');
+                    }
+                    break;
+                }
+            }
+
+            XLSX.writeFile(wb, `ChaiTime_Report_${fromDate}_to_${toDate}.xlsx`);
+            showToast('Excel exported successfully!', 'success');
+        } catch (error) {
+            console.error('Error exporting Excel:', error);
+            showToast('Error exporting Excel. Please try again.', 'error');
+        }
+    });
+}
+
+// Helper: Apply column widths to Excel sheet
+function applyExcelColumnWidths(ws, widths) {
+    ws['!cols'] = widths.map(w => ({ wch: w }));
+}
+
+// ===================================
 // Settings Module
 // ===================================
 
